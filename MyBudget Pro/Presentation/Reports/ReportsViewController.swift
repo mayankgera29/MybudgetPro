@@ -5,119 +5,149 @@
 //  Created by mayank gera on 19/01/26.
 //
 
-
 import UIKit
 
-final class ReportsViewController: UIViewController {
+final class ReportsViewController: UITableViewController {
 
     private let viewModel = ReportsViewModel()
 
-    private let pieChart = PieChartView()
-    private let stackView = UIStackView()
-    private let totalLabel = UILabel()
+    // MARK: - State
+    private var totalText: String = "₹0"
+    private var insightText: String = "Loading insights…"
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Reports"
-        view.backgroundColor = .systemBackground
 
-        setupChart()
-        setupLegend()
-        setupTotal()
+        tableView.separatorStyle = .none
+        tableView.backgroundColor = .clear
+        tableView.allowsSelection = false
+
+        tableView.register(SummaryCell.self, forCellReuseIdentifier: "SummaryCell")
+        tableView.register(PieChartCell.self, forCellReuseIdentifier: "PieChartCell")
+        tableView.register(ProgressCell.self, forCellReuseIdentifier: "ProgressCell")
+        tableView.register(InsightCell.self, forCellReuseIdentifier: "InsightCell")
+
+        loadData()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleExpenseUpdate),
+            name: .expenseUpdated,
+            object: nil
+        )
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        // 🔥 Animate after layout is complete
-        pieChart.configure(with: viewModel.pieSlices)
-        updateLegend()
-        updateTotal()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        view.applyAppGradient()
     }
 
-    // MARK: - Pie Chart
-    private func setupChart() {
-        pieChart.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(pieChart)
-
-        NSLayoutConstraint.activate([
-            pieChart.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 40), // 🔥 below navbar
-            pieChart.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            pieChart.widthAnchor.constraint(equalToConstant: 240),
-            pieChart.heightAnchor.constraint(equalToConstant: 240)
-        ])
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
-    // MARK: - Legend
-    private func setupLegend() {
-        stackView.axis = .vertical
-        stackView.spacing = 12
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(stackView)
-
-        NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: pieChart.bottomAnchor, constant: 24),
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
-        ])
+    // MARK: - Data Loading
+    @objc private func handleExpenseUpdate() {
+        loadData()
     }
 
-    private func updateLegend() {
-        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+    private func loadData() {
+        Task { [weak self] in
+            guard let self else { return }
 
-        for summary in viewModel.summaries {
-            stackView.addArrangedSubview(makeLegendRow(summary))
+            self.totalText = await viewModel.totalConversionText()
+            self.insightText = viewModel.differenceInsightText()
+
+            self.tableView.reloadData()
         }
     }
 
-    private func makeLegendRow(_ summary: ReportsViewModel.CategorySummary) -> UIView {
-
-        let row = UIView()
-        row.heightAnchor.constraint(equalToConstant: 24).isActive = true
-
-        let dot = UIView()
-        dot.backgroundColor = summary.category.color
-        dot.layer.cornerRadius = 6
-        dot.translatesAutoresizingMaskIntoConstraints = false
-
-        let label = UILabel()
-        label.text = "\(summary.category.title)  ₹\(Int(summary.amount))"
-        label.font = .systemFont(ofSize: 16)
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        row.addSubview(dot)
-        row.addSubview(label)
-
-        NSLayoutConstraint.activate([
-            dot.leadingAnchor.constraint(equalTo: row.leadingAnchor),
-            dot.centerYAnchor.constraint(equalTo: row.centerYAnchor),
-            dot.widthAnchor.constraint(equalToConstant: 12),
-            dot.heightAnchor.constraint(equalToConstant: 12),
-
-            label.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 12),
-            label.centerYAnchor.constraint(equalTo: row.centerYAnchor)
-        ])
-
-        return row
+    // MARK: - Sections
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        4
     }
 
-    // MARK: - Total
-    private func setupTotal() {
-        totalLabel.font = .boldSystemFont(ofSize: 22)
-        totalLabel.textAlignment = .center
-        totalLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(totalLabel)
-
-        NSLayoutConstraint.activate([
-            totalLabel.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 30),
-            totalLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-        ])
+    override func tableView(_ tableView: UITableView,
+                            numberOfRowsInSection section: Int) -> Int {
+        switch section {
+        case 0: return 1
+        case 1: return 1
+        case 2: return viewModel.summaries.count
+        case 3: return 1
+        default: return 0
+        }
     }
 
-    private func updateTotal() {
-        totalLabel.text = "Total: ₹\(Int(viewModel.totalAmount))"
+    // MARK: - Cells
+    override func tableView(_ tableView: UITableView,
+                            cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+
+        switch indexPath.section {
+
+        // 🔝 SUMMARY (BIG TOTAL + USD)
+        case 0:
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: "SummaryCell",
+                for: indexPath
+            ) as! SummaryCell
+
+            cell.configure(
+                totalText: totalText,
+                topCategory: viewModel.topCategory
+            )
+            return cell
+
+        // PIE CHART
+        case 1:
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: "PieChartCell",
+                for: indexPath
+            ) as! PieChartCell
+
+            cell.configure(
+                slices: viewModel.pieSlices,
+                total: viewModel.totalAmount
+            )
+            return cell
+
+        // CATEGORY PROGRESS
+        case 2:
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: "ProgressCell",
+                for: indexPath
+            ) as! ProgressCell
+
+            let item = viewModel.summaries[indexPath.row]
+            cell.configure(
+                category: item.category,
+                amount: item.amount,
+                max: viewModel.maxCategoryAmount
+            )
+            return cell
+
+        // 🔽 INSIGHT (DIFFERENCE ONLY)
+        default:
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: "InsightCell",
+                for: indexPath
+            ) as! InsightCell
+
+            cell.configure(text: insightText)
+            return cell
+        }
+    }
+
+    // MARK: - Heights
+    override func tableView(_ tableView: UITableView,
+                            heightForRowAt indexPath: IndexPath) -> CGFloat {
+        switch indexPath.section {
+        case 0: return 120
+        case 1: return 340
+        case 2: return 78
+        case 3: return 80
+        default: return 44
+        }
     }
 }

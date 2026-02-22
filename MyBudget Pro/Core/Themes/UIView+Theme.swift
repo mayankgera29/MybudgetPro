@@ -9,17 +9,21 @@ import UIKit
 
 extension UIView {
 
-    /// Apply app gradient background
     func applyAppGradient() {
 
-        // Remove old gradients (important)
+        // Remove old gradients
         layer.sublayers?
             .filter { $0.name == "AppGradientLayer" }
             .forEach { $0.removeFromSuperlayer() }
 
+        // Ask theme dynamically
+        guard let colors = AppTheme.gradientColors(for: traitCollection) else {
+            return   // 🔥 dark mode = NO gradient
+        }
+
         let gradient = CAGradientLayer()
         gradient.name = "AppGradientLayer"
-        gradient.colors = AppTheme.gradientColors
+        gradient.colors = colors
         gradient.frame = bounds
         gradient.startPoint = CGPoint(x: 0, y: 0)
         gradient.endPoint = CGPoint(x: 1, y: 1)
@@ -27,7 +31,6 @@ extension UIView {
         layer.insertSublayer(gradient, at: 0)
     }
 
-    /// Apply card style (tiles)
     func applyCardStyle() {
         backgroundColor = AppTheme.cardBackground
         layer.cornerRadius = 16

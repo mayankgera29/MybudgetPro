@@ -5,122 +5,183 @@
 //  Created by mayank gera on 19/01/26.
 //
 
-
 import UIKit
+import Lottie
 
 final class CategoriesViewController: UIViewController {
 
     private let viewModel = CategoriesViewModel()
 
+    private let scrollView = UIScrollView()
+    private let contentStack = UIStackView()
+    private let segmentedControl = UISegmentedControl(items: ["All", "Today", "This Month"])
+
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+
         title = "Categories"
+        
+        view.backgroundColor = .systemBackground
+        view.addBackgroundLottie(named: "background_motion")
 
-        // ✅ Filter button
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "Filter",
-            style: .plain,
-            target: self,
-            action: #selector(filterTapped)
-        )
+        setupScroll()
+        setupSegment()
+        render()
+    }
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(render),
-            name: .expenseUpdated,
-            object: nil
-        )
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        render() // ✅ refresh data when coming back
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         view.applyAppGradient()
+    }
+
+    // MARK: - Scroll
+    private func setupScroll() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scrollView)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        contentStack.axis = .vertical
+        contentStack.spacing = 6
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(contentStack)
+
+        NSLayoutConstraint.activate([
+            contentStack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 2),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+        ])
+    }
+
+    // MARK: - Segment
+    private func setupSegment() {
+        let card = UIView()
+        card.applyCardStyle()
+        card.heightAnchor.constraint(equalToConstant: 50).isActive = true
+
+        segmentedControl.selectedSegmentIndex = 0
+        segmentedControl.selectedSegmentTintColor = AppTheme.primary
+        segmentedControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
+        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
+
+        card.addSubview(segmentedControl)
+
+        NSLayoutConstraint.activate([
+            segmentedControl.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
+            segmentedControl.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
+            segmentedControl.centerYAnchor.constraint(equalTo: card.centerYAnchor,constant: -2)
+        ])
+
+        contentStack.addArrangedSubview(card)
+    }
+
+    @objc private func segmentChanged() {
+        switch segmentedControl.selectedSegmentIndex {
+        case 1: viewModel.setFilter(.today)
+        case 2: viewModel.setFilter(.thisMonth)
+        default: viewModel.setFilter(.all)
+        }
         render()
     }
 
-    // MARK: - Filter Action
-    @objc private func filterTapped() {
+    // MARK: - Render
+    private func render() {
 
-        let sheet = UIAlertController(
-            title: "Filter by Date",
-            message: nil,
-            preferredStyle: .actionSheet
-        )
+        contentStack.arrangedSubviews.dropFirst().forEach { $0.removeFromSuperview() }
 
-        sheet.addAction(UIAlertAction(title: "All", style: .default) { _ in
-            self.viewModel.setFilter(.all)
-            self.render()
-        })
-
-        sheet.addAction(UIAlertAction(title: "Today", style: .default) { _ in
-            self.viewModel.setFilter(.today)
-            self.render()
-        })
-
-        sheet.addAction(UIAlertAction(title: "This Month", style: .default) { _ in
-            self.viewModel.setFilter(.thisMonth)
-            self.render()
-        })
-
-        // ✅ CUSTOM DATE (CORRECT WAY)
-        sheet.addAction(UIAlertAction(title: "Custom Date", style: .default) { _ in
-            self.openCustomDatePicker()
-        })
-
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        present(sheet, animated: true)
-    }
-
-    // MARK: - Custom Date Picker
-    private func openCustomDatePicker() {
-
-        let pickerVC = CustomDatePickerViewController()
-        pickerVC.modalPresentationStyle = .pageSheet
-
-        pickerVC.onApply = { [weak self] from, to in
-            self?.viewModel.setFilter(.custom(from: from, to: to))
-            self?.render()
-        }
-
-        present(pickerVC, animated: true)
-    }
-
-    // MARK: - Render (UNCHANGED TILE UI)
-    @objc private func render() {
-
-        view.subviews.forEach { $0.removeFromSuperview() }
-
-        var y: CGFloat = 120
-        let data = viewModel.getCategoryTotals()   // ✅ filtered internally
+        let data = viewModel.getCategoryTotals()
 
         for (category, total) in data {
 
-            let tile = UIView(frame: CGRect(
-                x: 20,
-                y: y,
-                width: view.bounds.width - 40,
-                height: 70
-            ))
-            tile.applyCardStyle()
+            let wrapper = UIView()
+            wrapper.heightAnchor.constraint(equalToConstant: 88).isActive = true // 🔥 SAME AS HOME
 
-            let label = UILabel(frame: CGRect(
-                x: 16,
-                y: 22,
-                width: tile.bounds.width - 32,
-                height: 24
-            ))
-            label.text = "\(category.emoji) \(category.title) ₹\(Int(total))"
-            label.font = .boldSystemFont(ofSize: 16)
+            let cardHeight: CGFloat = 72
 
-            tile.addSubview(label)
-            view.addSubview(tile)
+            let card = UIView()
+            card.applyCardStyle()
+            card.translatesAutoresizingMaskIntoConstraints = false
+            card.heightAnchor.constraint(equalToConstant: cardHeight).isActive = true
+            card.isUserInteractionEnabled = true
 
-            y += 90
+            wrapper.addSubview(card)
+
+            NSLayoutConstraint.activate([
+                card.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor, constant: 20),
+                card.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor, constant: -20),
+                card.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor)
+            ])
+
+            let tap = CategoryTapGesture(
+                category: category,
+                target: self,
+                action: #selector(categoryTapped(_:))
+            )
+            card.addGestureRecognizer(tap)
+
+            // 🔹 Lottie (same proportion as Home)
+            let iconSize = cardHeight * 0.65
+            let icon = LottieAnimationView(
+                animation: LottieAnimation.named(category.lottieName)
+            )
+            icon.loopMode = .loop
+            icon.play()
+            icon.translatesAutoresizingMaskIntoConstraints = false
+
+            // 🔹 Title
+            let titleLabel = UILabel()
+            titleLabel.text = category.title
+            titleLabel.font = .boldSystemFont(ofSize: 15)
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+            // 🔹 Amount (no cut, standard formatter)
+            let amountLabel = UILabel()
+            amountLabel.text = CurrencyFormatter.inr(total)
+            amountLabel.font = .boldSystemFont(ofSize: 15)
+            amountLabel.textAlignment = .right
+            amountLabel.translatesAutoresizingMaskIntoConstraints = false
+
+            card.addSubview(icon)
+            card.addSubview(titleLabel)
+            card.addSubview(amountLabel)
+
+            NSLayoutConstraint.activate([
+                icon.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+                icon.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+                icon.widthAnchor.constraint(equalToConstant: iconSize),
+                icon.heightAnchor.constraint(equalToConstant: iconSize),
+
+                titleLabel.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 10),
+                titleLabel.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+
+                amountLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+                amountLabel.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+                amountLabel.leadingAnchor.constraint(
+                    greaterThanOrEqualTo: titleLabel.trailingAnchor,
+                    constant: 8
+                )
+            ])
+
+            contentStack.addArrangedSubview(wrapper)
         }
     }
 
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+    // MARK: - Tap
+    @objc private func categoryTapped(_ gesture: CategoryTapGesture) {
+        let vc = CategoryDetailViewController(category: gesture.category)
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
-

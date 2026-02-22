@@ -13,25 +13,13 @@ final class MainTabBarController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
         applyTabBarTheme()
-        setupTabs()
     }
 
-    private func setupTabs() {
-
-        let home = UINavigationController(rootViewController: HomeViewController())
-        home.tabBarItem = UITabBarItem(title: "Home", image: UIImage(systemName: "house"), tag: 0)
-
-        let categories = UINavigationController(rootViewController: CategoriesViewController())
-        categories.tabBarItem = UITabBarItem(title: "Categories", image: UIImage(systemName: "square.grid.2x2"), tag: 1)
-
-        let reports = UINavigationController(rootViewController: ReportsViewController())
-        reports.tabBarItem = UITabBarItem(title: "Reports", image: UIImage(systemName: "chart.pie"), tag: 2)
-
-        viewControllers = [home, categories, reports]
+    func setTabs(_ viewControllers: [UIViewController]) {
+        self.viewControllers = viewControllers
     }
 
     func applyTabBarTheme() {
-
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = AppTheme.background

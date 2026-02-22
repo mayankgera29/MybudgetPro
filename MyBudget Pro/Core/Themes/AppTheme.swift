@@ -1,37 +1,52 @@
-//
-//  AppTheme.swift
-//  MyBudget Pro
-//
-//  Created by mayank gera on 19/01/26.
-//
-
-
-import UIKit
-
 import UIKit
 
 struct AppTheme {
 
-    // MARK: - Brand Colors (DO NOT CHANGE)
-    static let primary = UIColor.systemPurple
-    static let secondary = UIColor.systemIndigo
+    // MARK: - Brand Colors (LIGHT BLUISH PASTEL)
+    static let primary = UIColor(
+        red: 175/255,
+        green: 210/255,
+        blue: 240/255,
+        alpha: 1
+    )
 
-    // MARK: - Dynamic Backgrounds (AUTO DARK/LIGHT)
-    static let background = UIColor.systemBackground
+    static let secondary = UIColor(
+        red: 200/255,
+        green: 225/255,
+        blue: 250/255,
+        alpha: 1
+    )
+
+    // MARK: - Dynamic Backgrounds
+    static let background = UIColor { trait in
+        trait.userInterfaceStyle == .dark
+        ? UIColor(
+            red: 22/255,
+            green: 26/255,
+            blue: 32/255,
+            alpha: 1
+          )   // 🌙 soft dark (NOT pure black)
+        : UIColor(
+            red: 240/255,
+            green: 248/255,
+            blue: 255/255,
+            alpha: 1
+          )   // ☀️ light blue pastel
+    }
 
     static let cardBackground = UIColor { trait in
         trait.userInterfaceStyle == .dark
-        ? UIColor.secondarySystemBackground
+        ? UIColor(red: 34/255, green: 38/255, blue: 46/255, alpha: 1)
         : UIColor.white
     }
 
     static let cardOverlay = UIColor { trait in
         trait.userInterfaceStyle == .dark
         ? UIColor.white.withAlphaComponent(0.08)
-        : UIColor.black.withAlphaComponent(0.05)
+        : UIColor.black.withAlphaComponent(0.015)
     }
 
-    // MARK: - Text Colors (AUTO ADJUST)
+    // MARK: - Text
     static let titleText = UIColor.label
     static let subtitleText = UIColor.secondaryLabel
 
@@ -39,20 +54,18 @@ struct AppTheme {
         trait.userInterfaceStyle == .dark ? .black : .white
     }
 
-    // MARK: - Gradient (AUTO DARK/LIGHT)
-    static let gradientColors: [CGColor] = {
-        let isDark = UITraitCollection.current.userInterfaceStyle == .dark
+    // MARK: - Gradient (VERY LIGHT BLUE)
+    static func gradientColors(for trait: UITraitCollection) -> [CGColor]? {
 
-        if isDark {
-            return [
-                UIColor(red: 25/255, green: 25/255, blue: 35/255, alpha: 1).cgColor,
-                UIColor(red: 55/255, green: 45/255, blue: 90/255, alpha: 1).cgColor
-            ]
-        } else {
-            return [
-                UIColor.systemPurple.cgColor,
-                UIColor.systemIndigo.cgColor
-            ]
+        // ❌ No gradient in dark mode
+        if trait.userInterfaceStyle == .dark {
+            return nil
         }
-    }()
+
+        // ✅ Light mode only
+        return [
+            UIColor(red: 240/255, green: 248/255, blue: 255/255, alpha: 1).cgColor,
+            UIColor(red: 225/255, green: 240/255, blue: 255/255, alpha: 1).cgColor
+        ]
+    }
 }

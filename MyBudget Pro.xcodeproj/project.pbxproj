@@ -28,7 +28,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Presentation/Home/Untitled.swift,
 			);
 			target = 18217CA42F1DF27B00468035 /* MyBudget Pro */;
 		};

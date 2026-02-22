@@ -4,7 +4,6 @@
 //
 //  Created by mayank gera on 19/01/26.
 //
-
 import UIKit
 
 final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
@@ -12,9 +11,12 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
     // MARK: - UI
     private let categoryButton = UIButton(type: .system)
 
-    private let cardView = UIView()
+    private let amountCard = UIView()
+    private let noteCard = UIView()
+
     private let amountTextField = UITextField()
     private let noteTextField = UITextField()
+    
 
     private let datePicker = UIDatePicker()
     private let saveButton = UIButton(type: .system)
@@ -32,11 +34,10 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
 
         setupUI()
         setupKeyboardDismiss()
-        addDoneButtonToKeyboard()
         validateForm()
     }
 
-    // MARK: - UI Setup (SIMPLE & SAFE)
+    // MARK: - UI Setup
     private func setupUI() {
 
         // CATEGORY
@@ -45,39 +46,50 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
         categoryButton.addTarget(self, action: #selector(selectCategory), for: .touchUpInside)
         categoryButton.translatesAutoresizingMaskIntoConstraints = false
 
-        // CARD (RECTANGLE)
-        cardView.backgroundColor = UIColor.secondarySystemBackground
-        cardView.layer.cornerRadius = 14
-        cardView.translatesAutoresizingMaskIntoConstraints = false
+        // AMOUNT CARD
+        amountCard.backgroundColor = .secondarySystemBackground
+        amountCard.layer.cornerRadius = 14
+        amountCard.translatesAutoresizingMaskIntoConstraints = false
 
-        // AMOUNT
         amountTextField.placeholder = "Amount"
         amountTextField.keyboardType = .decimalPad
-        amountTextField.borderStyle = .none
         amountTextField.delegate = self
+        amountTextField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
 
-        // NOTE
-        noteTextField.placeholder = "Note (optional)"
-        noteTextField.borderStyle = .none
-        noteTextField.delegate = self
-
-        // STACK INSIDE CARD
-        let cardStack = UIStackView(arrangedSubviews: [
-            amountTextField,
-            noteTextField
+        // DONE BUTTON (RIGHT OF AMOUNT)
+       
+        // HORIZONTAL STACK (Amount + Done)
+        let amountRow = UIStackView(arrangedSubviews: [
+            amountTextField
         ])
-        cardStack.axis = .vertical
-        cardStack.spacing = 12
-        cardStack.translatesAutoresizingMaskIntoConstraints = false
+        amountRow.axis = .horizontal
+        amountRow.spacing = 12
+        amountRow.alignment = .center
+        amountRow.translatesAutoresizingMaskIntoConstraints = false
 
-        cardView.addSubview(cardStack)
+        amountTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        
+
+        amountCard.addSubview(amountRow)
+
+        // NOTE CARD
+        noteCard.backgroundColor = .secondarySystemBackground
+        noteCard.layer.cornerRadius = 14
+        noteCard.translatesAutoresizingMaskIntoConstraints = false
+
+        noteTextField.placeholder = "Note (optional)"
+        noteTextField.delegate = self
+        noteTextField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
+
+        noteCard.addSubview(noteTextField)
+        noteTextField.translatesAutoresizingMaskIntoConstraints = false
 
         // DATE
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .compact
         datePicker.translatesAutoresizingMaskIntoConstraints = false
 
-        // SAVE
+        // SAVE BUTTON
         saveButton.setTitle("Save Expense", for: .normal)
         saveButton.backgroundColor = .systemGray
         saveButton.setTitleColor(.white, for: .normal)
@@ -87,32 +99,43 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
 
         // ADD TO VIEW
-        view.addSubview(categoryButton)
-        view.addSubview(cardView)
-        view.addSubview(datePicker)
-        view.addSubview(saveButton)
+        [categoryButton, amountCard, noteCard, datePicker, saveButton].forEach {
+            view.addSubview($0)
+        }
 
+        // CONSTRAINTS
         NSLayoutConstraint.activate([
+
             // CATEGORY
             categoryButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
             categoryButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             categoryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
-            // CARD
-            cardView.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 20),
-            cardView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            cardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            // AMOUNT CARD
+            amountCard.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 20),
+            amountCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            amountCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
-            cardStack.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
-            cardStack.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16),
-            cardStack.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-            cardStack.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            amountRow.topAnchor.constraint(equalTo: amountCard.topAnchor, constant: 16),
+            amountRow.bottomAnchor.constraint(equalTo: amountCard.bottomAnchor, constant: -16),
+            amountRow.leadingAnchor.constraint(equalTo: amountCard.leadingAnchor, constant: 16),
+            amountRow.trailingAnchor.constraint(equalTo: amountCard.trailingAnchor, constant: -16),
+
+            // NOTE CARD
+            noteCard.topAnchor.constraint(equalTo: amountCard.bottomAnchor, constant: 16),
+            noteCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            noteCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+
+            noteTextField.topAnchor.constraint(equalTo: noteCard.topAnchor, constant: 16),
+            noteTextField.bottomAnchor.constraint(equalTo: noteCard.bottomAnchor, constant: -16),
+            noteTextField.leadingAnchor.constraint(equalTo: noteCard.leadingAnchor, constant: 16),
+            noteTextField.trailingAnchor.constraint(equalTo: noteCard.trailingAnchor, constant: -16),
 
             // DATE
-            datePicker.topAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 20),
+            datePicker.topAnchor.constraint(equalTo: noteCard.bottomAnchor, constant: 20),
             datePicker.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
 
-            // SAVE (JUST BELOW CATEGORY SECTION)
+            // SAVE
             saveButton.topAnchor.constraint(equalTo: datePicker.bottomAnchor, constant: 24),
             saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
@@ -120,34 +143,18 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
         ])
     }
 
-    // MARK: - Keyboard Handling
-
+    // MARK: - Keyboard
     private func setupKeyboardDismiss() {
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
     }
 
-    private func addDoneButtonToKeyboard() {
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
-        toolbar.items = [
-            UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
-            UIBarButtonItem(title: "Done", style: .done, target: self, action: #selector(dismissKeyboard))
-        ]
-        amountTextField.inputAccessoryView = toolbar
-    }
-
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
 
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
-    }
-
-    // MARK: - Category Picker
+    // MARK: - Category
     @objc private func selectCategory() {
         let picker = CategoryPickerViewController()
         picker.modalPresentationStyle = .pageSheet
@@ -159,10 +166,15 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
     }
 
     // MARK: - Validation
+    @objc private func textChanged() {
+        validateForm()
+    }
+
     private func validateForm() {
-        let valid = Double(amountTextField.text ?? "") != nil && selectedCategory != nil
-        saveButton.isEnabled = valid
-        saveButton.backgroundColor = valid ? AppTheme.primary : .systemGray
+        let isAmountValid = Double(amountTextField.text ?? "") != nil
+        let isValid = isAmountValid && selectedCategory != nil
+        saveButton.isEnabled = isValid
+        saveButton.backgroundColor = isValid ? AppTheme.primary : .systemGray
     }
 
     // MARK: - Save

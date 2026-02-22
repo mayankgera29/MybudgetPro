@@ -11,10 +11,13 @@ import UIKit
 final class SplashViewController: UIViewController {
 
     private let gradientLayer = CAGradientLayer()
-
+    private let titleLabel = UILabel()
+    var onFinish: (() -> Void)?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupGradient()
+
+        setupBackground()
         setupUI()
         moveNext()
     }
@@ -24,38 +27,77 @@ final class SplashViewController: UIViewController {
         gradientLayer.frame = view.bounds
     }
 
-    private func setupUI() {
-        let label = UILabel()
-        label.text = "MyBudget Pro"
-        label.font = .boldSystemFont(ofSize: 34)
-        label.textColor = .white
-        label.translatesAutoresizingMaskIntoConstraints = false
+    // MARK: - Background (Classy Mix)
+    private func setupBackground() {
+        view.backgroundColor = AppTheme.background
 
-        view.addSubview(label)
+        // 🎨 Light mode gradient only
+        let topColor = UIColor(
+            red: 0.92,
+            green: 0.95,
+            blue: 1.00,
+            alpha: 1
+        )
 
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
+        let bottomColor = UIColor(
+            red: 0.85,
+            green: 0.90,
+            blue: 0.98,
+            alpha: 1
+        )
+
+        gradientLayer.colors = [
+            topColor.cgColor,
+            bottomColor.cgColor
+        ]
+
+        gradientLayer.startPoint = CGPoint(x: 0.2, y: 0.0)
+        gradientLayer.endPoint   = CGPoint(x: 0.8, y: 1.0)
+
+        view.layer.insertSublayer(gradientLayer, at: 0)
     }
 
-    private func moveNext() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-            self?.goToMain()
+    // MARK: - UI
+    private func setupUI() {
+        titleLabel.text = "MyBudget Pro"
+        titleLabel.font = .boldSystemFont(ofSize: 34)
+        titleLabel.textColor = .black
+        titleLabel.alpha = 0
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+
+        // ✨ Smooth fade-in
+        UIView.animate(withDuration: 0.6) {
+            self.titleLabel.alpha = 1
         }
     }
 
-    // 🔥 CORRECT TRANSITION
+    // MARK: - Navigation
+    private func moveNext() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.onFinish?()
+        }
+    }
+
     private func goToMain() {
 
-        let tabBar = MainTabBarController()
+        let rootVC: UIViewController =
+            UserSession.isUserLoggedIn
+            ? MainTabBarController()
+            : NameEntryViewController()
 
         guard
             let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
             let window = windowScene.windows.first
         else { return }
 
-        window.rootViewController = tabBar
+        window.rootViewController = rootVC
 
         UIView.transition(
             with: window,
@@ -63,13 +105,5 @@ final class SplashViewController: UIViewController {
             options: .transitionCrossDissolve,
             animations: nil
         )
-    }
-
-    private func setupGradient() {
-        gradientLayer.colors = [
-            UIColor.systemPurple.cgColor,
-            UIColor.systemIndigo.cgColor
-        ]
-        view.layer.insertSublayer(gradientLayer, at: 0)
     }
 }

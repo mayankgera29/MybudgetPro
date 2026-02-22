@@ -10,28 +10,26 @@ import UIKit
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+    private var appCoordinator: AppCoordinator?
 
     func scene(
         _ scene: UIScene,
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
-
         guard let windowScene = scene as? UIWindowScene else { return }
 
         let window = UIWindow(windowScene: windowScene)
+        self.window = window
 
         configureNavigationBar()
 
-        // ✅ Start from Splash
-        window.rootViewController = SplashViewController()
-        window.makeKeyAndVisible()
-        self.window = window
+        let coordinator = AppCoordinator(window: window)
+        self.appCoordinator = coordinator
+        coordinator.start()
     }
 
-    // MARK: - Navigation Bar
     private func configureNavigationBar() {
-
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = AppTheme.background
@@ -39,13 +37,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         appearance.titleTextAttributes = [
             .foregroundColor: AppTheme.titleText
         ]
-        appearance.largeTitleTextAttributes = [
-            .foregroundColor: AppTheme.titleText
-        ]
 
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
         UINavigationBar.appearance().tintColor = AppTheme.titleText
     }
 }

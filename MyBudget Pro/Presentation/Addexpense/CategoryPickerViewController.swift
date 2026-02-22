@@ -14,14 +14,19 @@ final class CategoryPickerViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = UIColor(
+            red: 245/255,
+            green: 247/255,
+            blue: 250/255,
+            alpha: 1
+        )
         setupSheet()
         setupTiles()
     }
 
     private func setupSheet() {
         if let sheet = sheetPresentationController {
-            sheet.detents = [.medium()]
+            sheet.detents = [.large()]
             sheet.prefersGrabberVisible = true
         }
     }
