@@ -92,9 +92,15 @@ final class HomeViewController: UIViewController,
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+
+        // If system changed the theme, clear any saved override so system stays in control
+        if view.window?.overrideUserInterfaceStyle != .unspecified {
+            ThemeManager.shared.applyTheme(.system)
+        }
+
         syncThemeButtonWithSystem()
         view.applyAppGradient()
-        tableView.reloadData() // refresh card backgrounds
+        tableView.reloadData()
     }
 
     private func setupThemeToggleButton() {
@@ -115,7 +121,8 @@ final class HomeViewController: UIViewController,
 
     @objc private func themeToggleTapped() {
         let isDark = traitCollection.userInterfaceStyle == .dark
-        view.window?.overrideUserInterfaceStyle = isDark ? .light : .dark
+        let newMode: AppThemeMode = isDark ? .light : .dark
+        ThemeManager.shared.applyTheme(newMode)
         (tabBarController as? MainTabBarController)?.applyTabBarTheme()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }

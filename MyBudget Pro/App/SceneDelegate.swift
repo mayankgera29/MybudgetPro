@@ -24,6 +24,16 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         configureNavigationBar()
 
+        // Apply saved theme preference before showing any UI
+        let savedMode = ThemeManager.shared.currentMode
+        let style: UIUserInterfaceStyle
+        switch savedMode {
+        case .light: style = .light
+        case .dark:  style = .dark
+        case .system: style = .unspecified
+        }
+        window.overrideUserInterfaceStyle = style
+
         let coordinator = AppCoordinator(window: window)
         self.appCoordinator = coordinator
         coordinator.start()

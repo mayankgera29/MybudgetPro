@@ -48,11 +48,7 @@ final class SplashViewController: UIViewController {
 
     // MARK: - Background (Classy Mix)
     private func setupBackground() {
-        view.backgroundColor = UIColor { trait in
-            trait.userInterfaceStyle == .dark
-                ? UIColor(red: 22/255, green: 26/255, blue: 32/255, alpha: 1)
-                : UIColor(red: 240/255, green: 248/255, blue: 255/255, alpha: 1)
-        }
+        view.backgroundColor = AppTheme.background
         gradientLayer.startPoint = CGPoint(x: 0.2, y: 0.0)
         gradientLayer.endPoint   = CGPoint(x: 0.8, y: 1.0)
         updateGradientColors()
