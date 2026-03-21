@@ -53,6 +53,14 @@ final class ReportsViewController: UITableViewController {
         view.applyAppGradient()
     }
 
+    // MARK: - Theme
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        view.applyAppGradient()
+        tableView.reloadData()
+    }
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }

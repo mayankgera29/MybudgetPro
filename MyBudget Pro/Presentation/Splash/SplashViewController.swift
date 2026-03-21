@@ -27,33 +27,31 @@ final class SplashViewController: UIViewController {
         gradientLayer.frame = view.bounds
     }
 
+    // MARK: - Theme
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        updateGradientColors()
+    }
+
+    private func updateGradientColors() {
+        let isDark = traitCollection.userInterfaceStyle == .dark
+        if isDark {
+            gradientLayer.colors = nil // no gradient in dark mode, background color handles it
+        } else {
+            gradientLayer.colors = [
+                UIColor(red: 0.92, green: 0.95, blue: 1.00, alpha: 1).cgColor,
+                UIColor(red: 0.85, green: 0.90, blue: 0.98, alpha: 1).cgColor
+            ]
+        }
+    }
+
     // MARK: - Background (Classy Mix)
     private func setupBackground() {
         view.backgroundColor = AppTheme.background
-
-        // 🎨 Light mode gradient only
-        let topColor = UIColor(
-            red: 0.92,
-            green: 0.95,
-            blue: 1.00,
-            alpha: 1
-        )
-
-        let bottomColor = UIColor(
-            red: 0.85,
-            green: 0.90,
-            blue: 0.98,
-            alpha: 1
-        )
-
-        gradientLayer.colors = [
-            topColor.cgColor,
-            bottomColor.cgColor
-        ]
-
         gradientLayer.startPoint = CGPoint(x: 0.2, y: 0.0)
         gradientLayer.endPoint   = CGPoint(x: 0.8, y: 1.0)
-
+        updateGradientColors()
         view.layer.insertSublayer(gradientLayer, at: 0)
     }
 

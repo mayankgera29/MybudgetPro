@@ -49,6 +49,24 @@ final class NameEntryViewController: UIViewController {
         gradientLayer.frame = view.bounds
     }
 
+    // MARK: - Theme
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        updateGradientColors()
+    }
+
+    private func updateGradientColors() {
+        let isDark = traitCollection.userInterfaceStyle == .dark
+        let topColor = isDark
+            ? UIColor(red: 0.10, green: 0.13, blue: 0.20, alpha: 1)
+            : UIColor(red: 0.92, green: 0.95, blue: 1.00, alpha: 1)
+        let bottomColor = isDark
+            ? UIColor(red: 0.05, green: 0.06, blue: 0.10, alpha: 1)
+            : UIColor(red: 0.85, green: 0.90, blue: 0.98, alpha: 1)
+        gradientLayer.colors = [topColor.cgColor, bottomColor.cgColor]
+    }
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
@@ -57,21 +75,9 @@ final class NameEntryViewController: UIViewController {
     private func setupBackground() {
         view.backgroundColor = AppTheme.background
 
-        let topColor = UIColor { trait in
-            trait.userInterfaceStyle == .dark
-            ? UIColor(red: 0.10, green: 0.13, blue: 0.20, alpha: 1)
-            : UIColor(red: 0.92, green: 0.95, blue: 1.00, alpha: 1)
-        }
-
-        let bottomColor = UIColor { trait in
-            trait.userInterfaceStyle == .dark
-            ? UIColor(red: 0.05, green: 0.06, blue: 0.10, alpha: 1)
-            : UIColor(red: 0.85, green: 0.90, blue: 0.98, alpha: 1)
-        }
-
-        gradientLayer.colors = [topColor.cgColor, bottomColor.cgColor]
         gradientLayer.startPoint = CGPoint(x: 0.2, y: 0.0)
         gradientLayer.endPoint = CGPoint(x: 0.8, y: 1.0)
+        updateGradientColors()
 
         view.layer.insertSublayer(gradientLayer, at: 0)
     }

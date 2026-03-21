@@ -35,6 +35,14 @@ final class CategoryDetailViewController: UITableViewController {
         view.applyAppGradient()
     }
 
+    // MARK: - Theme
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        view.applyAppGradient()
+        tableView.reloadData()
+    }
+
     // MARK: - Navbar
     private func setupNavTitle() {
         let label = UILabel()

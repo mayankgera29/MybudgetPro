@@ -49,6 +49,14 @@ final class CategoriesViewController: UIViewController {
         view.applyAppGradient()
     }
 
+    // MARK: - Theme
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        view.applyAppGradient()
+        render()
+    }
+
     // MARK: - Scroll
     private func setupScroll() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false

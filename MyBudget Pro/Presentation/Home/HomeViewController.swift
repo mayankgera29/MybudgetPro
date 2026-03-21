@@ -88,11 +88,13 @@ final class HomeViewController: UIViewController,
         updateEmptyState(isEmpty: state.isEmpty)
     }
 
-    // MARK: - Theme (UNCHANGED)
+    // MARK: - Theme
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
         syncThemeButtonWithSystem()
+        view.applyAppGradient()
+        tableView.reloadData() // refresh card backgrounds
     }
 
     private func setupThemeToggleButton() {
