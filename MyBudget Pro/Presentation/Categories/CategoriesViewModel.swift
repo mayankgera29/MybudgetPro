@@ -9,8 +9,12 @@ import Foundation
 
 final class CategoriesViewModel {
 
-    private let repository = ExpenseRepository.shared
+    private let repository: ExpenseRepositoryProtocol
     private var currentFilter: DateFilter = .all
+
+    init(repository: ExpenseRepositoryProtocol = ExpenseRepository.shared) {
+        self.repository = repository
+    }
 
     func setFilter(_ filter: DateFilter) {
         currentFilter = filter

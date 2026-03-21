@@ -9,7 +9,16 @@ import UIKit
 
 final class ReportsViewController: UITableViewController {
 
-    private let viewModel = ReportsViewModel()
+    // MARK: - Dependencies
+    private let viewModel: ReportsViewModel
+
+    // MARK: - Init
+    init(viewModel: ReportsViewModel) {
+        self.viewModel = viewModel
+        super.init(style: .plain)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 
     // MARK: - State
     private var totalText: String = "₹0"

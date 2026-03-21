@@ -10,7 +10,16 @@ import Lottie
 
 final class CategoriesViewController: UIViewController {
 
-    private let viewModel = CategoriesViewModel()
+    // MARK: - Dependencies
+    private let viewModel: CategoriesViewModel
+
+    // MARK: - Init
+    init(viewModel: CategoriesViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
@@ -181,7 +190,8 @@ final class CategoriesViewController: UIViewController {
 
     // MARK: - Tap
     @objc private func categoryTapped(_ gesture: CategoryTapGesture) {
-        let vc = CategoryDetailViewController(category: gesture.category)
+        let detailVM = CategoryDetailViewModel(category: gesture.category)
+        let vc = CategoryDetailViewController(viewModel: detailVM)
         navigationController?.pushViewController(vc, animated: true)
     }
 }

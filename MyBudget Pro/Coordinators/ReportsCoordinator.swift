@@ -17,7 +17,8 @@ final class ReportsCoordinator {
     }
 
     func start() {
-        let vc = ReportsViewController()
+        let viewModel = ReportsViewModel()
+        let vc = ReportsViewController(viewModel: viewModel)
         navigationController.setViewControllers([vc], animated: false)
     }
 }

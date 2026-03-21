@@ -8,6 +8,17 @@ import UIKit
 
 final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
 
+    // MARK: - Dependencies
+    private let viewModel: AddExpenseViewModel
+
+    // MARK: - Init
+    init(viewModel: AddExpenseViewModel = AddExpenseViewModel()) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
     // MARK: - UI
     private let categoryButton = UIButton(type: .system)
 
@@ -184,15 +195,12 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
             let category = selectedCategory
         else { return }
 
-        let expense = Expense(
-            id: UUID(),
+        viewModel.saveExpense(
             category: category,
             amount: amount,
             note: noteTextField.text ?? "",
             date: datePicker.date
         )
-
-        ExpenseRepository.shared.addExpense(expense)
         navigationController?.popViewController(animated: true)
     }
 }

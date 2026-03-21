@@ -17,7 +17,8 @@ final class CategoriesCoordinator: Coordinator {
     }
 
     func start() {
-        let vc = CategoriesViewController()   // ✅ NO ARGUMENTS
+        let viewModel = CategoriesViewModel()
+        let vc = CategoriesViewController(viewModel: viewModel)
         navigationController.setViewControllers([vc], animated: false)
     }
 }

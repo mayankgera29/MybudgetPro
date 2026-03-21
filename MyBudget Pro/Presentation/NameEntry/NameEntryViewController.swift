@@ -10,6 +10,17 @@ import UIKit
 
 final class NameEntryViewController: UIViewController {
 
+    // MARK: - Dependencies
+    private let viewModel: NameEntryViewModel
+
+    // MARK: - Init
+    init(viewModel: NameEntryViewModel = NameEntryViewModel()) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
     // MARK: - UI
     private let gradientLayer = CAGradientLayer()
     private let cardView = UIView()
@@ -174,12 +185,8 @@ final class NameEntryViewController: UIViewController {
 
     // MARK: - Actions
     @objc private func continueTapped() {
-        guard
-            let name = textField.text?.trimmingCharacters(in: .whitespaces),
-            !name.isEmpty
-        else { return }
-
-        UserSession.userName = name
+        guard viewModel.isValid(name: textField.text) else { return }
+        viewModel.saveName(textField.text ?? "")
         onFinish?()
     }
 

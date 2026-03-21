@@ -15,8 +15,16 @@ final class ReportsViewModel {
     }
     
     // MARK: - Dependencies
-    private let repository = ExpenseRepository.shared
-    private let exchangeService = ExchangeRateService()
+    private let repository: ExpenseRepositoryProtocol
+    private let exchangeService: ExchangeRateService
+
+    init(
+        repository: ExpenseRepositoryProtocol = ExpenseRepository.shared,
+        exchangeService: ExchangeRateService = ExchangeRateService()
+    ) {
+        self.repository = repository
+        self.exchangeService = exchangeService
+    }
     
     // MARK: - Data
     var summaries: [CategorySummary] {
