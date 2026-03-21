@@ -32,6 +32,11 @@ final class CategoryDetailViewModel {
         items = filtered(all)
     }
 
+    func deleteExpense(id: UUID) {
+        repository.deleteExpense(id: id)
+        loadData()
+    }
+
     // MARK: - Private
     private func filtered(_ expenses: [Expense]) -> [Expense] {
         let cal = Calendar.current

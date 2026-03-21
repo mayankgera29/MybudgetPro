@@ -9,6 +9,7 @@
 import UIKit
 
 final class PieChartCell: UITableViewCell {
+    static let reuseID = "PieChartCell"
 
     private let card = CardView()
     private let titleLabel = UILabel()
@@ -56,12 +57,13 @@ final class PieChartCell: UITableViewCell {
             pieChart.heightAnchor.constraint(equalToConstant: 220),
 
             totalLabel.topAnchor.constraint(equalTo: pieChart.bottomAnchor, constant: 8),
-            totalLabel.centerXAnchor.constraint(equalTo: card.centerXAnchor)
+            totalLabel.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+            totalLabel.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
     }
 
     func configure(slices: [PieChartView.Slice], total: Double) {
-        totalLabel.text = "Total: ₹\(Int(total))"
+        totalLabel.text = total > 0 ? "Total: \(CurrencyFormatter.inr(total))" : "No expenses yet"
         pieChart.configure(with: slices)
     }
 }

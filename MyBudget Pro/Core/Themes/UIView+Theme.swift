@@ -1,25 +1,21 @@
 //
-//  UIView+Theme.swift.swift
+//  UIView+Theme.swift
 //  MyBudget Pro
-//
-//  Created by mayank gera on 19/01/26.
 //
 
 import UIKit
 
 extension UIView {
 
+    /// Applies or resizes the app gradient layer. Safe to call from viewDidLayoutSubviews.
     func applyAppGradient() {
-
-        // Remove old gradients
-        layer.sublayers?
-            .filter { $0.name == "AppGradientLayer" }
-            .forEach { $0.removeFromSuperlayer() }
-
-        // Ask theme dynamically
-        guard let colors = AppTheme.gradientColors(for: traitCollection) else {
-            return   // 🔥 dark mode = NO gradient
+        if let existing = layer.sublayers?.first(where: { $0.name == "AppGradientLayer" }) as? CAGradientLayer {
+            existing.frame = bounds
+            existing.colors = AppTheme.gradientColors(for: traitCollection)
+            return
         }
+
+        guard let colors = AppTheme.gradientColors(for: traitCollection) else { return }
 
         let gradient = CAGradientLayer()
         gradient.name = "AppGradientLayer"
@@ -28,7 +24,17 @@ extension UIView {
         gradient.startPoint = CGPoint(x: 0, y: 0)
         gradient.endPoint = CGPoint(x: 1, y: 1)
 
+        // Insert above OrbBackground subview layer but below everything else
         layer.insertSublayer(gradient, at: 0)
+    }
+
+    /// Call on traitCollectionDidChange to refresh gradient colors.
+    func refreshAppGradient() {
+        // Remove all stale gradient layers first
+        layer.sublayers?
+            .filter { $0.name == "AppGradientLayer" }
+            .forEach { $0.removeFromSuperlayer() }
+        applyAppGradient()
     }
 
     func applyCardStyle() {

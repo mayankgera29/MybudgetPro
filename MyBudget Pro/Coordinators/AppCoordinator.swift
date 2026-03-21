@@ -50,6 +50,7 @@ final class AppCoordinator {
 
     private func showMainTab() {
         let tabCoordinator = MainTabBarCoordinator(window: window)
+        self.mainTabCoordinator = tabCoordinator
         tabCoordinator.start()
     }
 

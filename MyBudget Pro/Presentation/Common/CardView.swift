@@ -23,10 +23,15 @@ final class CardView: UIView {
     private func setup() {
         backgroundColor = AppTheme.cardBackground
         layer.cornerRadius = 16
-
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.08
         layer.shadowRadius = 8
         layer.shadowOffset = CGSize(width: 0, height: 4)
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        backgroundColor = AppTheme.cardBackground
     }
 }

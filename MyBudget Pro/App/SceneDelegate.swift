@@ -42,14 +42,17 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func configureNavigationBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
+        // Use dynamic UIColor so it auto-updates on trait changes
         appearance.backgroundColor = AppTheme.background
-
         appearance.titleTextAttributes = [
-            .foregroundColor: AppTheme.titleText
+            .foregroundColor: UIColor.label,
+            .font: UIFont.systemFont(ofSize: 17, weight: .semibold)
         ]
-
+        appearance.largeTitleTextAttributes = [
+            .foregroundColor: UIColor.label
+        ]
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().tintColor = AppTheme.titleText
+        UINavigationBar.appearance().tintColor = AppTheme.primary
     }
 }

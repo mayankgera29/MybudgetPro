@@ -4,17 +4,19 @@
 //
 
 import UIKit
-import Lottie
 
-final class CategoryDetailViewController: UITableViewController {
+final class CategoryDetailViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     // MARK: - Dependencies
     private let viewModel: CategoryDetailViewModel
 
+    // MARK: - UI
+    private let tableView = UITableView(frame: .zero, style: .plain)
+
     // MARK: - Init
     init(viewModel: CategoryDetailViewModel) {
         self.viewModel = viewModel
-        super.init(style: .plain)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -22,10 +24,10 @@ final class CategoryDetailViewController: UITableViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        view.backgroundColor = AppTheme.background
         setupNavTitle()
         setupFilterButton()
-        setupTable()
+        setupTableView()
         viewModel.loadData()
         tableView.reloadData()
     }
@@ -35,12 +37,30 @@ final class CategoryDetailViewController: UITableViewController {
         view.applyAppGradient()
     }
 
-    // MARK: - Theme
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
-        view.applyAppGradient()
+        view.refreshAppGradient()
         tableView.reloadData()
+    }
+
+    // MARK: - Setup
+    private func setupTableView() {
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.showsVerticalScrollIndicator = false
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tableView)
+
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
     }
 
     // MARK: - Navbar
@@ -65,19 +85,10 @@ final class CategoryDetailViewController: UITableViewController {
     // MARK: - Filter
     @objc private func filterTapped() {
         let sheet = UIAlertController(title: "Filter", message: nil, preferredStyle: .actionSheet)
-
-        sheet.addAction(UIAlertAction(title: "All", style: .default) { [weak self] _ in
-            self?.applyFilter(.all)
-        })
-        sheet.addAction(UIAlertAction(title: "Today", style: .default) { [weak self] _ in
-            self?.applyFilter(.today)
-        })
-        sheet.addAction(UIAlertAction(title: "This Month", style: .default) { [weak self] _ in
-            self?.applyFilter(.thisMonth)
-        })
-        sheet.addAction(UIAlertAction(title: "Custom Range", style: .default) { [weak self] _ in
-            self?.openCustomPicker()
-        })
+        sheet.addAction(UIAlertAction(title: "All",        style: .default) { [weak self] _ in self?.applyFilter(.all) })
+        sheet.addAction(UIAlertAction(title: "Today",      style: .default) { [weak self] _ in self?.applyFilter(.today) })
+        sheet.addAction(UIAlertAction(title: "This Month", style: .default) { [weak self] _ in self?.applyFilter(.thisMonth) })
+        sheet.addAction(UIAlertAction(title: "Custom Range", style: .default) { [weak self] _ in self?.openCustomPicker() })
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(sheet, animated: true)
     }
@@ -95,82 +106,92 @@ final class CategoryDetailViewController: UITableViewController {
         present(picker, animated: true)
     }
 
-    // MARK: - Table Setup
-    private func setupTable() {
-        tableView.separatorStyle = .none
-        tableView.backgroundColor = .clear
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-
-        let tabBarHeight = tabBarController?.tabBar.frame.height ?? 83
-        tableView.contentInset.bottom = tabBarHeight + 24
-    }
-
     // MARK: - UITableViewDataSource
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         viewModel.items.count
     }
 
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        92
-    }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 92 }
 
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         cell.backgroundColor = .clear
         cell.selectionStyle = .none
         cell.contentView.subviews.forEach { $0.removeFromSuperview() }
 
-        let expense = viewModel.items[indexPath.row]
+        let expense  = viewModel.items[indexPath.row]
         let category = viewModel.category
 
         let card = UIView()
         card.applyCardStyle()
+        card.clipsToBounds = true
         card.translatesAutoresizingMaskIntoConstraints = false
         cell.contentView.addSubview(card)
+
+        let bar = UIView()
+        bar.backgroundColor = category.color
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(bar)
+
+        let icon = UILabel()
+        icon.text = category.emoji
+        icon.font = .systemFont(ofSize: 28)
+        icon.translatesAutoresizingMaskIntoConstraints = false
+
+        let titleLabel = UILabel()
+        titleLabel.text = expense.note.isEmpty ? category.title : expense.note
+        titleLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        titleLabel.textColor = .label
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let amountLabel = UILabel()
+        amountLabel.text = CurrencyFormatter.inr(expense.amount)
+        amountLabel.font = .boldSystemFont(ofSize: 15)
+        amountLabel.textAlignment = .right
+        amountLabel.setContentHuggingPriority(.required, for: .horizontal)
+        amountLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amountLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        card.addSubview(icon)
+        card.addSubview(titleLabel)
+        card.addSubview(amountLabel)
 
         NSLayoutConstraint.activate([
             card.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
             card.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -16),
             card.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 8),
-            card.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -8)
-        ])
+            card.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -8),
 
-        let icon = LottieAnimationView(animation: LottieAnimation.named(category.lottieName))
-        icon.loopMode = .loop
-        icon.play()
-        icon.translatesAutoresizingMaskIntoConstraints = false
+            bar.leadingAnchor.constraint(equalTo: card.leadingAnchor),
+            bar.topAnchor.constraint(equalTo: card.topAnchor),
+            bar.bottomAnchor.constraint(equalTo: card.bottomAnchor),
+            bar.widthAnchor.constraint(equalToConstant: 5),
 
-        let title = UILabel()
-        title.text = expense.note.isEmpty ? category.title : expense.note
-        title.font = .systemFont(ofSize: 15, weight: .medium)
-        title.textColor = .label
-        title.translatesAutoresizingMaskIntoConstraints = false
-
-        let amount = UILabel()
-        amount.text = CurrencyFormatter.inr(expense.amount)
-        amount.font = .boldSystemFont(ofSize: 15)
-        amount.textAlignment = .right
-        amount.textColor = .label
-        amount.translatesAutoresizingMaskIntoConstraints = false
-
-        card.addSubview(icon)
-        card.addSubview(title)
-        card.addSubview(amount)
-
-        NSLayoutConstraint.activate([
-            icon.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
+            icon.leadingAnchor.constraint(equalTo: bar.trailingAnchor, constant: 12),
             icon.centerYAnchor.constraint(equalTo: card.centerYAnchor),
             icon.widthAnchor.constraint(equalToConstant: 36),
             icon.heightAnchor.constraint(equalToConstant: 36),
 
-            title.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12),
-            title.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12),
+            titleLabel.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: amountLabel.leadingAnchor, constant: -8),
 
-            amount.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
-            amount.centerYAnchor.constraint(equalTo: card.centerYAnchor),
-            amount.leadingAnchor.constraint(greaterThanOrEqualTo: title.trailingAnchor, constant: 8)
+            amountLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
+            amountLabel.centerYAnchor.constraint(equalTo: card.centerYAnchor)
         ])
 
         return cell
+    }
+
+    // MARK: - Delete
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool { true }
+
+    func tableView(_ tableView: UITableView,
+                   commit editingStyle: UITableViewCell.EditingStyle,
+                   forRowAt indexPath: IndexPath) {
+        guard editingStyle == .delete else { return }
+        let expense = viewModel.items[indexPath.row]
+        viewModel.deleteExpense(id: expense.id)
+        tableView.deleteRows(at: [indexPath], with: .automatic)
     }
 }
