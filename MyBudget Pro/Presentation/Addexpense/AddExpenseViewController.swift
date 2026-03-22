@@ -62,12 +62,32 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
         scrollView.keyboardDismissMode = .interactive
         view.addSubview(scrollView)
 
+        // Save button pinned to bottom, outside scroll
+        saveButton.setTitle("Save Expense", for: .normal)
+        saveButton.titleLabel?.font = .boldSystemFont(ofSize: 17)
+        saveButton.backgroundColor = .systemGray3
+        saveButton.setTitleColor(.white, for: .normal)
+        saveButton.layer.cornerRadius = 16
+        saveButton.isEnabled = false
+        saveButton.translatesAutoresizingMaskIntoConstraints = false
+        saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        view.addSubview(saveButton)
+
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            saveButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            saveButton.heightAnchor.constraint(equalToConstant: 56)
         ])
+
+        // Inset scroll content so it doesn't hide behind the pinned button
+        scrollView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 88, right: 0)
+        scrollView.scrollIndicatorInsets = scrollView.contentInset
 
         contentStack.axis = .vertical
         contentStack.spacing = 16
@@ -78,7 +98,7 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
             contentStack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 24),
             contentStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 20),
             contentStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -20),
-            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -40),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -24),
             contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -40)
         ])
     }
@@ -93,7 +113,6 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
         contentStack.addArrangedSubview(makeNoteField())
         contentStack.addArrangedSubview(makeSectionLabel("Date"))
         contentStack.addArrangedSubview(makeDateRow())
-        contentStack.addArrangedSubview(makeSaveButton())
     }
 
     private func makeSectionLabel(_ text: String) -> UILabel {
@@ -256,30 +275,6 @@ final class AddExpenseViewController: UIViewController, UITextFieldDelegate {
         ])
 
         return container
-    }
-
-    private func makeSaveButton() -> UIView {
-        let wrapper = UIView()
-        wrapper.heightAnchor.constraint(equalToConstant: 80).isActive = true
-
-        saveButton.setTitle("Save Expense", for: .normal)
-        saveButton.titleLabel?.font = .boldSystemFont(ofSize: 17)
-        saveButton.backgroundColor = .systemGray3
-        saveButton.setTitleColor(.white, for: .normal)
-        saveButton.layer.cornerRadius = 16
-        saveButton.isEnabled = false
-        saveButton.translatesAutoresizingMaskIntoConstraints = false
-        saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
-        wrapper.addSubview(saveButton)
-
-        NSLayoutConstraint.activate([
-            saveButton.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
-            saveButton.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
-            saveButton.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: 8),
-            saveButton.heightAnchor.constraint(equalToConstant: 56)
-        ])
-
-        return wrapper
     }
 
     // MARK: - Category Update

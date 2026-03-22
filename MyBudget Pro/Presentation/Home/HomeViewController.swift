@@ -15,6 +15,11 @@ final class HomeViewController: UIViewController, UITableViewDataSource, UITable
     private var viewState: HomeViewState?
     private var dailyQuote: DailyQuote?
     private var hasShownWelcome = false
+    private var isPersonalMode = true  // false = Split mode
+
+    // MARK: - Split
+    private let splitViewModel = SplitViewModel()
+    private var splitVC: SplitViewController?
 
     // MARK: - UI
     private let tableView = UITableView(frame: .zero, style: .plain)
@@ -23,6 +28,7 @@ final class HomeViewController: UIViewController, UITableViewDataSource, UITable
     private let emptyHintLabel = UILabel()
     private let welcomeOverlay = UIView()
     private let welcomeCard = UIView()
+    private let modeSegment = UISegmentedControl(items: ["Personal", "Split"])
 
     // MARK: - Init
     init(viewModel: HomeViewModel) {
@@ -38,15 +44,20 @@ final class HomeViewController: UIViewController, UITableViewDataSource, UITable
         title = "Recent"
         view.backgroundColor = AppTheme.background
         view.addBackgroundLottie(named: "background_motion")
+        setupNavBar()
         setupTable()
         setupFloatingButton()
         setupEmptyState()
+        embedSplitVC()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         reload()
         fetchQuoteIfNeeded()
+        if !isPersonalMode {
+            splitViewModel.reload()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -66,6 +77,8 @@ final class HomeViewController: UIViewController, UITableViewDataSource, UITable
         guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
         view.refreshAppGradient()
         tableView.reloadData()
+        // Re-apply segment background so it stays visible after theme change
+        modeSegment.backgroundColor = AppTheme.primary.withAlphaComponent(0.12)
     }
 
     // MARK: - Data
@@ -86,6 +99,76 @@ final class HomeViewController: UIViewController, UITableViewDataSource, UITable
         }
     }
 
+    // MARK: - Nav Bar
+    private func setupNavBar() {
+        // Mode switcher in title view
+        modeSegment.selectedSegmentIndex = 0
+        modeSegment.selectedSegmentTintColor = AppTheme.primary
+        // Use adaptive colors so text is readable in both light and dark
+        modeSegment.setTitleTextAttributes([
+            .foregroundColor: UIColor.white,
+            .font: UIFont.systemFont(ofSize: 13, weight: .semibold)
+        ], for: .selected)
+        modeSegment.setTitleTextAttributes([
+            .foregroundColor: AppTheme.primary,
+            .font: UIFont.systemFont(ofSize: 13, weight: .medium)
+        ], for: .normal)
+        // Give the control a visible background so it reads against the nav bar
+        modeSegment.backgroundColor = AppTheme.primary.withAlphaComponent(0.12)
+        modeSegment.layer.cornerRadius = 8
+        modeSegment.addTarget(self, action: #selector(modeSwitched), for: .valueChanged)
+        modeSegment.widthAnchor.constraint(equalToConstant: 200).isActive = true
+        navigationItem.titleView = modeSegment
+
+        // Profile button (right)
+        let profileBtn = UIBarButtonItem(image: UIImage(systemName: "person.circle"), style: .plain, target: self, action: #selector(profileTapped))
+        profileBtn.tintColor = AppTheme.primary
+        navigationItem.rightBarButtonItem = profileBtn
+    }
+
+    @objc private func modeSwitched() {
+        isPersonalMode = modeSegment.selectedSegmentIndex == 0
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        UIView.animate(withDuration: 0.25) {
+            self.tableView.alpha = self.isPersonalMode ? 1 : 0
+            self.emptyAnimation.alpha = self.isPersonalMode ? 1 : 0
+            self.emptyHintLabel.alpha = self.isPersonalMode ? 1 : 0
+            self.splitVC?.view.alpha = self.isPersonalMode ? 0 : 1
+            // FAB stays visible in both modes — addTapped routes correctly
+        }
+        if !isPersonalMode {
+            splitViewModel.reload()
+            splitVC?.viewWillAppear(false)
+        }
+    }
+
+    @objc private func profileTapped() {
+        let profileVC = ProfileViewController()
+        navigationController?.pushViewController(profileVC, animated: true)
+    }
+
+    // MARK: - Embed Split VC
+    private func embedSplitVC() {
+        let vc = SplitViewController(viewModel: splitViewModel)
+        splitVC = vc
+        addChild(vc)
+        vc.view.translatesAutoresizingMaskIntoConstraints = false
+        vc.view.alpha = 0
+        view.insertSubview(vc.view, belowSubview: addButton)  // keep FAB on top
+        NSLayoutConstraint.activate([
+            vc.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            vc.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            vc.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+        vc.didMove(toParent: self)
+        // Ensure personal-mode views stay above split view
+        view.bringSubviewToFront(tableView)
+        view.bringSubviewToFront(emptyAnimation)
+        view.bringSubviewToFront(emptyHintLabel)
+        view.bringSubviewToFront(addButton)
+    }
+
     // MARK: - Table Setup
     private func setupTable() {
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -95,13 +178,13 @@ final class HomeViewController: UIViewController, UITableViewDataSource, UITable
         tableView.delegate = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         tableView.showsVerticalScrollIndicator = false
-        tableView.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 100, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 24, right: 0)
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
     }
 
@@ -154,13 +237,21 @@ final class HomeViewController: UIViewController, UITableViewDataSource, UITable
             addButton.widthAnchor.constraint(equalToConstant: 56),
             addButton.heightAnchor.constraint(equalToConstant: 56),
             addButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-            addButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -90)
+            addButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
     }
 
     @objc private func addTapped() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        navigationController?.pushViewController(AddExpenseViewController(), animated: true)
+        if isPersonalMode {
+            navigationController?.pushViewController(AddExpenseViewController(), animated: true)
+        } else {
+            let addVC = AddSplitExpenseViewController(viewModel: splitViewModel)
+            addVC.onSave = { [weak self] in
+                self?.splitViewModel.reload()
+            }
+            navigationController?.pushViewController(addVC, animated: true)
+        }
     }
 
     // MARK: - TableView DataSource
